@@ -60,6 +60,8 @@ var kReceiptsUpperLimit float64 = 50000.0
 // declare สำหรับ ref database
 var db *sql.DB
 
+//pending
+
 func main() {
 
 	e := echo.New()
@@ -130,6 +132,7 @@ func main() {
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
 	}
+	//pending
 }
 
 // Handle tax calculation
@@ -229,16 +232,8 @@ func handleTaxCalculation(c echo.Context) error {
 		responseMap["taxRefund"] = response.TaxRefund
 	}
 
+	//pending
 	return c.JSON(http.StatusOK, responseMap)
-}
-
-// jsonRootLevelKeyCount หา count ของ JSON top-level keys
-func jsonRootLevelKeyCount(jsonData string) (int, error) {
-	var data map[string]interface{} // Use a map to hold the JSON structure
-	if err := json.Unmarshal([]byte(jsonData), &data); err != nil {
-		return 0, err // Return error if JSON is malformed or can't be parsed
-	}
-	return len(data), nil // The length of the map keys represents the count of top-level keys
 }
 
 // checkJSONOrder checks if the keys in the provided JSON body are in the expected order.
