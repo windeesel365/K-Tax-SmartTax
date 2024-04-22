@@ -349,3 +349,11 @@ func validateTaxRequestAmount(req TaxRequest) error {
 	// No validation errors, return nil
 	return nil
 }
+
+func caltaxableIncome(TotalIncome, personalExemption, donations, kReceipts float64) float64 {
+	taxableIncome := TotalIncome - (personalExemption + donations + kReceipts)
+	if taxableIncome < 0 {
+		taxableIncome = 0
+	}
+	return taxableIncome
+}
