@@ -1,11 +1,17 @@
 package main
 
 import (
-	"net/http"
+	"database/sql"
+	"fmt"
+	"log"
+	"os"
+	"regexp"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
 
+	"github.com/labstack/echo/middleware"
 	"github.com/labstack/echo/v4"
 )
 
@@ -44,10 +50,53 @@ var personalExemptionUpperLimit float64 = 100000.0
 var donationsUpperLimit float64 = 100000.0
 var kReceiptsUpperLimit float64 = 50000.0
 
+// declare สำหรับ ref database
+var db *sql.DB
+
 func main() {
+
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, Go Bootcamp!")
-	})
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	// Get port number from the environment variable 'PORT'
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("PORT environment variable not set.")
+	}
+
+	//define pattern regex สำหรับเช็คportว่า 4-digit number
+	pattern := regexp.MustCompile(`^\d{4}$`)
+	if !pattern.MatchString(port) {
+		log.Fatal("before starting server, please ensure that PORT environment variable must in 4-digit number.")
+	}
+
+	// Postgresql preparation part
+	// Retrieve the DATABASE_URL from the environment
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		fmt.Println("DATABASE_URL is not set")
+		return
+	}
+
+	// สร้าง connection กับ postgresql
+	var err error
+	db, err = sql.Open("postgres", databaseURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// Check the connection
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("PostgreSQL: Connected successfully.")
 }
