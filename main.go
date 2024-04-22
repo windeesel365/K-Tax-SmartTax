@@ -29,6 +29,11 @@ func (cf CustomFloat64) MarshalJSON() ([]byte, error) {
 	return []byte(formatted), nil
 }
 
+type TaxResponse struct {
+	Tax       CustomFloat64 `json:"tax"`
+	TaxRefund CustomFloat64 `json:"taxRefund,omitempty"`
+}
+
 func main() {
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
