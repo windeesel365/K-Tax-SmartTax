@@ -2,7 +2,11 @@ module github.com/windeesel365/K-Tax-SmartTax/assessment-tax
 
 go 1.21.5
 
-require github.com/labstack/echo/v4 v4.12.0
+require (
+	github.com/labstack/echo/v4 v4.12.0
+	github.com/lib/pq v1.10.9
+	github.com/shopspring/decimal v1.4.0
+)
 
 require (
 	github.com/labstack/gommon v0.4.2 // indirect
