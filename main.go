@@ -1,18 +1,22 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
 	"regexp"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
 
-	"github.com/labstack/echo/middleware"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 // data structure pattern ที่ user client request
@@ -99,4 +103,28 @@ func main() {
 	}
 
 	fmt.Println("PostgreSQL: Connected successfully.")
+
+	e.POST("/tax/calculations", handleTaxCalculation)
+
+	//Graceful Shutdown // Start server in goroutine
+	go func() {
+		if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
+		}
+	}()
+
+	// รอ interrupt signal เพื่อ gracefully shutdown server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	e.Logger.Print("shutting down the server")
+
+	// context เพื่อ timeout shutdown after 10 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// shutdown server
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
