@@ -1,7 +1,7 @@
 package main
 
 // func calculate tax ตาม tax brackets
-// รองรับแค่ปีเดียวคือ 2567 (2024)
+// รองรับแค่ปีเดียวคือ 2567 ( 2024)
 // อัตราภาษีไม่มีการเปลี่ยนแปลงในอนาคต
 func calculateTax(taxableIncome float64) float64 {
 	switch {
