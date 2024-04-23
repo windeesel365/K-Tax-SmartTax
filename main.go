@@ -29,6 +29,11 @@ type TaxRequest struct {
 	} `json:"allowances"`
 }
 
+// pattern ที่ admin input request
+type Deduction struct {
+	Amount float64 `json:"amount"`
+}
+
 // CustomFloat64 เป็น float64 ที่ custom ใหม่
 type CustomFloat64 float64
 
