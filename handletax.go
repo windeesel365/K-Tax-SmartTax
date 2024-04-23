@@ -42,7 +42,7 @@ func HandleTaxCalculation(c echo.Context) error {
 	}
 
 	// รวมการ Validate amount ของ struct req  values
-	if err := validateTaxRequestAmount(*req); err != nil {
+	if err := ValidateTaxRequestAmount(*req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
