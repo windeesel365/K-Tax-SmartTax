@@ -253,3 +253,12 @@ func createAdminDeductionsTable(db *sql.DB) error {
 	_, err := db.Exec(createTableSQL)
 	return err
 }
+
+func createDeduction(db *sql.DB, personalDeduction float64, kReceiptDeduction float64) (int, error) {
+	var id int
+	err := db.QueryRow(`INSERT INTO deductions(personal_deduction, k_receipt_deduction) VALUES($1, $2) RETURNING id;`, personalDeduction, kReceiptDeduction).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
