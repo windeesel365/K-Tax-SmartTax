@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
 
@@ -66,12 +67,12 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	/*
-		// Load environment variables from .env file
-		if err := godotenv.Load(); err != nil {
-			log.Fatalf("Error loading .env file: %v", err)
-		}
-	*/
+
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
 	// Get port number from the environment variable 'PORT'
 	port := os.Getenv("PORT")
 	if port == "" {
