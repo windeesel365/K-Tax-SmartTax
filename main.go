@@ -327,3 +327,13 @@ func setPersonalDeduction(c echo.Context) error {
 	//respond client(admin)
 	return c.JSON(http.StatusOK, map[string]CustomFloat64{"personalDeduction": CustomFloat64(d.Amount)})
 }
+
+func getPersonalDeduction(db *sql.DB, id int) (PersonalDeduction, error) {
+	var deduc PersonalDeduction
+	row := db.QueryRow(`SELECT id, personal_deduction FROM deductions WHERE id = $1;`, id)
+	err := row.Scan(&deduc.ID, &deduc.PersonalDeduction)
+	if err != nil {
+		return PersonalDeduction{}, err
+	}
+	return deduc, nil
+}
