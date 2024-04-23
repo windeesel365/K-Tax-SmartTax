@@ -210,3 +210,32 @@ func main() {
 	}
 
 }
+
+func login(c echo.Context) error {
+	//username and password จาก client request form-data
+	username := c.FormValue("username")
+	password := c.FormValue("password")
+
+	// check against env variables
+	if username != os.Getenv("ADMIN_USERNAME") || password != os.Getenv("ADMIN_PASSWORD") {
+		return echo.ErrUnauthorized
+	}
+
+	claims := &jwtCustomClaims{
+		username,
+		true,
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * 10)),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	t, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		return echo.ErrInternalServerError
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"token": t,
+	})
+}
