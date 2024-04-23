@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -132,86 +130,6 @@ func main() {
 		e.Logger.Fatal(err)
 	}
 	//pending
-}
-
-// function to extract keys from JSON string preserving order
-func GetOrderedKeysFromJSON(jsonStr []byte) ([]string, error) {
-	var keys []string
-
-	// สร้างตัวถอดรหัสJSON
-	decoder := json.NewDecoder(strings.NewReader(string(jsonStr)))
-
-	// อ่านโทเคนจาก JSON  โดยต่อเนื่อง
-	for {
-		// เรียก Token + จัดการข้อผิดพลาด
-		token, err := decoder.Token()
-		if err != nil {
-			break //หยุดลูปถ้าผิดพลาด
-		}
-
-		// ถ้า token เป็น key ให้ append เข้า keys slice
-		if key, ok := token.(string); ok {
-			keys = append(keys, key)
-			// Skip the value token
-			_, err := decoder.Token()
-			if err != nil {
-				break
-			}
-		}
-	}
-
-	return keys, nil
-}
-
-// validate taxRequest struct
-func validateTaxRequestAmount(req TaxRequest) error {
-
-	// check if TotalIncome value is not number
-	if IsNotNumber(req.TotalIncome) {
-		return fmt.Errorf("totalIncome must be a non-negative value")
-	}
-
-	// check if TotalIncome is a positive value
-	if req.TotalIncome < 0 {
-		return fmt.Errorf("totalIncome must be a non-negative value")
-	}
-
-	// Check if wht value is not number
-	if IsNotNumber(req.WHT) {
-		return fmt.Errorf("wht must be a non-negative value")
-	}
-
-	// Check if WHT is positive value
-	if req.WHT < 0 {
-		return fmt.Errorf("wht must be a non-negative value")
-	}
-
-	if req.WHT > req.TotalIncome {
-		return fmt.Errorf("please ensure that Withholding Tax(WHT) not exceed your total income. Let us know if you need any help")
-	}
-
-	// check if allowances array is not empty
-	if len(req.Allowances) == 0 {
-		return fmt.Errorf("at least one allowance must be provided")
-	}
-
-	// check each allowance
-	for _, allowance := range req.Allowances {
-		// Check if AllowanceType is not empty
-		if allowance.AllowanceType == "" ||
-			(allowance.AllowanceType != "donation" &&
-				allowance.AllowanceType != "k-receipt" &&
-				allowance.AllowanceType != "personalDeduction") {
-			return fmt.Errorf("please ensure that allowanceType inputed correctly")
-		}
-		// check if Amount is a positive value
-		if allowance.Amount < 0 {
-			return fmt.Errorf("amount for %s must be a non-negative value", allowance.AllowanceType)
-		}
-	}
-
-	// no validation errors  return nil
-	return nil
 }
 
 func caltaxableIncome(TotalIncome, personalExemption, donations, kReceipts float64) float64 {
