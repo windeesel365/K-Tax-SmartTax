@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
@@ -58,6 +59,12 @@ type IncomewithTaxResponse struct {
 	Totalincome CustomFloat64 `json:"totalIncome"`
 	Tax         CustomFloat64 `json:"tax"`
 	TaxRefund   CustomFloat64 `json:"taxRefund,omitempty"`
+}
+
+type jwtCustomClaims struct {
+	Username string `json:"username"`
+	Admin    bool   `json:"admin"`
+	jwt.RegisteredClaims
 }
 
 // initialize value
