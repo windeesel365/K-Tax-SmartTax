@@ -95,12 +95,12 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	// Load environment variables from .env file
+	// load environment variables from .env file
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	// Get port number from the environment variable 'PORT'
+	// get port number from the environment variable 'PORT'
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("PORT environment variable not set.")
@@ -113,7 +113,7 @@ func main() {
 	}
 
 	// Postgresql preparation part
-	// Retrieve the DATABASE_URL from the environment
+	// Retrieve DATABASE_URL from environment
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
 		fmt.Println("DATABASE_URL is not set")
