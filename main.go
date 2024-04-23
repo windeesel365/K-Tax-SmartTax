@@ -337,3 +337,8 @@ func getPersonalDeduction(db *sql.DB, id int) (PersonalDeduction, error) {
 	}
 	return deduc, nil
 }
+
+func updatePersonalDeduction(db *sql.DB, id int, personalDeduction float64) error {
+	_, err := db.Exec(`UPDATE deductions SET personal_deduction = $1 WHERE id = $2;`, personalDeduction, id)
+	return err
+}
