@@ -49,7 +49,7 @@ var initialPersonalExemption float64 = 60000.0
 var initialdonations float64 = 0.0
 var initialkReceipts float64 = 0.0
 
-// initial exemptions and limits
+// initial exemptions กับค่า limits
 var personalExemptionUpperLimit float64 = 100000.0
 var donationsUpperLimit float64 = 100000.0
 var kReceiptsUpperLimit float64 = 50000.0
