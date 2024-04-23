@@ -85,6 +85,11 @@ func HandleTaxCalculation(c echo.Context) error {
 				return c.JSON(http.StatusBadRequest, echo.Map{"error": "The kReceipts must be more than 0 THB. Please enter a positive amount and try again."})
 			}
 		}
+		if allowance.AllowanceType != "personal" &&
+			allowance.AllowanceType != "donation" &&
+			allowance.AllowanceType != "k-receipt" {
+			return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid allowance type. Please ensure the filled type personal, donation ,or k-receipt'"})
+		}
 	}
 
 	// หา taxable income
