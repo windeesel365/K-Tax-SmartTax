@@ -10,7 +10,7 @@ type TaxLevel struct {
 	Tax   CustomFloat64 `json:"tax"`
 }
 
-func calculateTaxLevelDetails(taxableIncome float64) []TaxLevel {
+func CalculateTaxLevelDetails(taxableIncome float64) []TaxLevel {
 	taxLevels := []struct {
 		Min  float64
 		Max  float64
