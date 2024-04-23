@@ -15,12 +15,12 @@ func ValidateTaxRequestAmount(req TaxRequest) error {
 		return fmt.Errorf("totalIncome must be a non-negative value")
 	}
 
-	// Check if wht value is not number
+	// check if wht value is not number
 	if IsNotNumber(req.WHT) {
 		return fmt.Errorf("wht must be a non-negative value")
 	}
 
-	// Check if WHT is positive value
+	// check if WHT is positive value
 	if req.WHT < 0 {
 		return fmt.Errorf("wht must be a non-negative value")
 	}
