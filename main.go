@@ -44,6 +44,17 @@ type TaxResponse struct {
 	TaxRefund CustomFloat64 `json:"taxRefund,omitempty"`
 }
 
+type TaxLevel struct {
+	Level string        `json:"level"`
+	Tax   CustomFloat64 `json:"tax"`
+}
+
+type IncomewithTaxResponse struct {
+	Totalincome CustomFloat64 `json:"totalIncome"`
+	Tax         CustomFloat64 `json:"tax"`
+	TaxRefund   CustomFloat64 `json:"taxRefund,omitempty"`
+}
+
 // initialize value
 var initialPersonalExemption float64 = 60000.0
 var initialdonations float64 = 0.0
