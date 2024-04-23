@@ -28,7 +28,7 @@ func TestIsNotNumber(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := isNotNumber(tt.input)
+			result := IsNotNumber(tt.input)
 			if result != tt.expectedResult {
 				t.Errorf("isNotNumber(%v) = %v, want %v", tt.input, result, tt.expectedResult)
 			}

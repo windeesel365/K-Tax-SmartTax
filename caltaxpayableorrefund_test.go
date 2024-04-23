@@ -20,7 +20,7 @@ func TestCalculateTaxPayableAndRefund(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			payable, refund := calculateTaxPayableAndRefund(tt.taxableIncome, tt.wht)
+			payable, refund := CalculateTaxPayableAndRefund(tt.taxableIncome, tt.wht)
 			if payable != tt.expectedPayable || refund != tt.expectedRefund {
 				t.Errorf("calculateTaxPayableAndRefund(%v, %v) = %v, %v; want %v, %v",
 					tt.taxableIncome, tt.wht, payable, refund, tt.expectedPayable, tt.expectedRefund)

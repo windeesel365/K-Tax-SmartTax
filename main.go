@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
 
@@ -67,12 +66,12 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-
-	// Load environment variables from .env file
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-
+	/*
+		// Load environment variables from .env file
+		if err := godotenv.Load(); err != nil {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
+	*/
 	// Get port number from the environment variable 'PORT'
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -155,7 +154,7 @@ func handleTaxCalculation(c echo.Context) error {
 	expectedKeys := []string{"totalIncome", "wht", "allowances"}
 
 	// validate JSON top-level keys count
-	count, err := jsonRootLevelKeyCount(string(body))
+	count, err := JsonRootLevelKeyCount(string(body))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
 	}
@@ -218,7 +217,7 @@ func handleTaxCalculation(c echo.Context) error {
 	taxableIncome := caltaxableIncome(req.TotalIncome, personalExemption, donations, kReceipts)
 
 	// หา taxPayable, taxRefund
-	taxPayable, taxRefund := calculateTaxPayableAndRefund(taxableIncome, req.WHT)
+	taxPayable, taxRefund := CalculateTaxPayableAndRefund(taxableIncome, req.WHT)
 
 	response := TaxResponse{Tax: taxPayable, TaxRefund: taxRefund}
 
@@ -298,7 +297,7 @@ func GetOrderedKeysFromJSON(jsonStr []byte) ([]string, error) {
 func validateTaxRequestAmount(req TaxRequest) error {
 
 	// Check if TotalIncome value is not number
-	if isNotNumber(req.TotalIncome) {
+	if IsNotNumber(req.TotalIncome) {
 		return fmt.Errorf("totalIncome must be a non-negative value")
 	}
 
@@ -308,7 +307,7 @@ func validateTaxRequestAmount(req TaxRequest) error {
 	}
 
 	// Check if wht value is not number
-	if isNotNumber(req.WHT) {
+	if IsNotNumber(req.WHT) {
 		return fmt.Errorf("wht must be a non-negative value")
 	}
 

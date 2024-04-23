@@ -19,7 +19,7 @@ func TestJsonRootLevelKeyCount(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			count, err := jsonRootLevelKeyCount(tt.jsonData)
+			count, err := JsonRootLevelKeyCount(tt.jsonData)
 			if (err != nil) != tt.expectedError {
 				t.Errorf("jsonRootLevelKeyCount(%v) unexpected error status: %v", tt.jsonData, err)
 			}
