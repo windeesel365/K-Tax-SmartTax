@@ -1,0 +1,143 @@
+
+
+
+
+
+
+
+
+func getLowestID(db *sql.DB, tableName string) (int, error) {
+	var lowestID int
+	// query select lowest ID จาก table
+	query := "SELECT MIN(id) FROM " + tableName
+
+	// query database
+	err := db.QueryRow(query).Scan(&lowestID)
+	if err != nil {
+		return 0, err
+	}
+	return lowestID, nil
+}
+
+// POST: /admin/deductions/personal
+func setPersonalDeduction(c echo.Context) error {
+	// Read body to a variable
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
+	}
+	defer c.Request().Body.Close()
+
+	// validation function process
+	if err := validatePersonalInput(body); err != nil {
+		return err
+	}
+
+	// after validation
+	// Bind JSON to struct
+	d := new(Deduction)
+	if err := json.Unmarshal(body, d); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
+	}
+
+	// Set change to initialPersonalExemption
+	initialPersonalExemption = d.Amount
+
+	// update PersonalDeduction to postgres db
+	err = updatePersonalDeduction(db, id, initialPersonalExemption)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// read after above update
+	adminPDeductions, err := getPersonalDeduction(db, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("***********\nAdmin updated initialPersonalExemption validated then updated postgresql row: %+v\n", adminPDeductions)
+
+	//respond client(admin)
+	return c.JSON(http.StatusOK, map[string]CustomFloat64{"personalDeduction": CustomFloat64(d.Amount)})
+}
+
+func getPersonalDeduction(db *sql.DB, id int) (PersonalDeduction, error) {
+	var deduc PersonalDeduction
+	row := db.QueryRow(`SELECT id, personal_deduction FROM deductions WHERE id = $1;`, id)
+	err := row.Scan(&deduc.ID, &deduc.PersonalDeduction)
+	if err != nil {
+		return PersonalDeduction{}, err
+	}
+	return deduc, nil
+}
+
+func updatePersonalDeduction(db *sql.DB, id int, personalDeduction float64) error {
+	_, err := db.Exec(`UPDATE deductions SET personal_deduction = $1 WHERE id = $2;`, personalDeduction, id)
+	return err
+}
+
+// Validation   input data for personal deductions
+func validatePersonalInput(body []byte) error {
+	//validate raw JSON not empty
+	if len(body) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Please provide input data")
+	}
+
+	//validate raw JSON root-level key count ว่าmatch  key count of correct pattern
+	expectedKeys := []string{"amount"}
+	count, err := JsonRootLevelKeyCount(string(body))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
+	}
+	if count != len(expectedKeys) {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input. Please ensure you enter only one amount, corresponding to setting value of personal deduction.")
+	}
+
+	//validate raw JSON root-level key count order
+	if err := CheckJSONOrder(body, expectedKeys); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	//validate struct และ amount
+	d := new(Deduction)
+	if err := json.Unmarshal(body, d); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
+	}
+
+	if err := validateFields(body, d); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format. Please check the input format again")
+	}
+
+	if d.Amount > 100000.0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure Personal Deduction amount does not exceed THB 100,000.")
+	}
+
+	if d.Amount <= 10000.0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure Personal Deduction must be more than THB 10000.")
+	}
+
+	return nil
+}
+
+// validateFields matches the number of JSON keys to the number of struct fields
+func validateFields(data []byte, d *Deduction) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	// Get number of fields in Deduction struct
+	t := reflect.TypeOf(*d)
+	deductionFieldCount := 0
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if tag := field.Tag.Get("json"); tag != "" && tag != "-" {
+			deductionFieldCount++
+		}
+	}
+
+	// Check if numbers of fields match
+	if len(raw) != deductionFieldCount {
+		return fmt.Errorf("number of fields in JSON (%d) does not match number of fields in Deduction (%d)", len(raw), deductionFieldCount)
+	}
+
+	return nil
+}

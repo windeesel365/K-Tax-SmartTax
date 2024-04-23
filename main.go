@@ -262,3 +262,13 @@ func createDeduction(db *sql.DB, personalDeduction float64, kReceiptDeduction fl
 	}
 	return id, nil
 }
+
+// CountRows นับจำนวน row ของ table ใน database
+func CountRows(db *sql.DB, tableName string) (int, error) {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM " + tableName).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
