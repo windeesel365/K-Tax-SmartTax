@@ -173,7 +173,7 @@ func main() {
 	basicAuthMiddleware := middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
 		isAuthenticated := username == adminUsername && password == adminPassword
 		if !isAuthenticated {
-			//log เพื่อ notice failed attempt
+			// log เพื่อ notice failed attempt
 			log.Printf("Failed login attempt for username: %s", username)
 			// ส่ง customize response message to client
 			return false, echo.NewHTTPError(http.StatusUnauthorized, "There was a problem logging in. Check your username and password.")
