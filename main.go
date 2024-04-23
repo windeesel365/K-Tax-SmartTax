@@ -239,3 +239,17 @@ func login(c echo.Context) error {
 		"token": t,
 	})
 }
+
+func createAdminDeductionsTable(db *sql.DB) error {
+	// SQL statement เพื่อ create 'deductions' table
+	createTableSQL := `
+		CREATE TABLE IF NOT EXISTS deductions (
+			id SERIAL PRIMARY KEY,
+			personal_deduction INTEGER NOT NULL,
+			k_receipt_deduction INTEGER NOT NULL
+		);
+	`
+	// Execute SQL statement ข้างบน
+	_, err := db.Exec(createTableSQL)
+	return err
+}
