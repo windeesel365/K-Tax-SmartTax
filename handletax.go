@@ -46,7 +46,7 @@ func HandleTaxCalculation(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
-	// allowance 3 types เริ่มมาจากค่าเริ่มต้น
+	//allowance 3 types เริ่มมาจากค่าเริ่มต้น
 	personalExemption := initialPersonalExemption
 	donations := initialdonations
 	kReceipts := initialkReceipts
