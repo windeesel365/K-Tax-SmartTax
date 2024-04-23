@@ -18,8 +18,8 @@ func handleFileUpload(c echo.Context) error {
 	}
 
 	//check format .csv  ไม่ใช่return error
-	if !strings.HasSuffix(file.Filename, ".csv") || !strings.Contains(file.Filename, "surname") {
-		return echo.NewHTTPError(http.StatusBadRequest, "File must end with '.csv' and include 'surname' in the filename.")
+	if !strings.HasSuffix(file.Filename, ".csv") {
+		return echo.NewHTTPError(http.StatusBadRequest, "File must end with '.csv'")
 	}
 
 	//check filename "taxes.csv"
