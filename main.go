@@ -272,3 +272,16 @@ func CountRows(db *sql.DB, tableName string) (int, error) {
 	}
 	return count, nil
 }
+
+func getLowestID(db *sql.DB, tableName string) (int, error) {
+	var lowestID int
+	// query select lowest ID จาก table
+	query := "SELECT MIN(id) FROM " + tableName
+
+	// query database
+	err := db.QueryRow(query).Scan(&lowestID)
+	if err != nil {
+		return 0, err
+	}
+	return lowestID, nil
+}

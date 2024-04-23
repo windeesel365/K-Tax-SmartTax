@@ -6,18 +6,7 @@
 
 
 
-func getLowestID(db *sql.DB, tableName string) (int, error) {
-	var lowestID int
-	// query select lowest ID จาก table
-	query := "SELECT MIN(id) FROM " + tableName
 
-	// query database
-	err := db.QueryRow(query).Scan(&lowestID)
-	if err != nil {
-		return 0, err
-	}
-	return lowestID, nil
-}
 
 // POST: /admin/deductions/personal
 func setPersonalDeduction(c echo.Context) error {
