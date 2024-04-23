@@ -8,45 +8,7 @@
 
 
 
-// POST: /admin/deductions/personal
-func setPersonalDeduction(c echo.Context) error {
-	// Read body to a variable
-	body, err := ioutil.ReadAll(c.Request().Body)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
-	}
-	defer c.Request().Body.Close()
 
-	// validation function process
-	if err := validatePersonalInput(body); err != nil {
-		return err
-	}
-
-	// after validation
-	// Bind JSON to struct
-	d := new(Deduction)
-	if err := json.Unmarshal(body, d); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
-	}
-
-	// Set change to initialPersonalExemption
-	initialPersonalExemption = d.Amount
-
-	// update PersonalDeduction to postgres db
-	err = updatePersonalDeduction(db, id, initialPersonalExemption)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// read after above update
-	adminPDeductions, err := getPersonalDeduction(db, id)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("***********\nAdmin updated initialPersonalExemption validated then updated postgresql row: %+v\n", adminPDeductions)
-
-	//respond client(admin)
-	return c.JSON(http.StatusOK, map[string]CustomFloat64{"personalDeduction": CustomFloat64(d.Amount)})
-}
 
 func getPersonalDeduction(db *sql.DB, id int) (PersonalDeduction, error) {
 	var deduc PersonalDeduction
