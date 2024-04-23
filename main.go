@@ -294,15 +294,15 @@ func GetOrderedKeysFromJSON(jsonStr []byte) ([]string, error) {
 	return keys, nil
 }
 
-// Function to validate the TaxRequest struct
+// validate taxRequest struct
 func validateTaxRequestAmount(req TaxRequest) error {
 
-	// Check if TotalIncome value is not number
+	// check if TotalIncome value is not number
 	if IsNotNumber(req.TotalIncome) {
 		return fmt.Errorf("totalIncome must be a non-negative value")
 	}
 
-	// Check if TotalIncome is a positive value
+	// check if TotalIncome is a positive value
 	if req.TotalIncome < 0 {
 		return fmt.Errorf("totalIncome must be a non-negative value")
 	}
@@ -312,7 +312,7 @@ func validateTaxRequestAmount(req TaxRequest) error {
 		return fmt.Errorf("wht must be a non-negative value")
 	}
 
-	// Check if WHT is a positive value
+	// Check if WHT is positive value
 	if req.WHT < 0 {
 		return fmt.Errorf("wht must be a non-negative value")
 	}
@@ -321,12 +321,12 @@ func validateTaxRequestAmount(req TaxRequest) error {
 		return fmt.Errorf("please ensure that Withholding Tax(WHT) not exceed your total income. Let us know if you need any help")
 	}
 
-	// Check if the Allowances array is not empty
+	// check if allowances array is not empty
 	if len(req.Allowances) == 0 {
 		return fmt.Errorf("at least one allowance must be provided")
 	}
 
-	// Check each allowance
+	// check each allowance
 	for _, allowance := range req.Allowances {
 		// Check if AllowanceType is not empty
 		if allowance.AllowanceType == "" ||
@@ -335,13 +335,13 @@ func validateTaxRequestAmount(req TaxRequest) error {
 				allowance.AllowanceType != "personalDeduction") {
 			return fmt.Errorf("please ensure that allowanceType inputed correctly")
 		}
-		// Check if Amount is a positive value
+		// check if Amount is a positive value
 		if allowance.Amount < 0 {
 			return fmt.Errorf("amount for %s must be a non-negative value", allowance.AllowanceType)
 		}
 	}
 
-	// No validation errors, return nil
+	// no validation errors  return nil
 	return nil
 }
 
