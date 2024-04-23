@@ -258,7 +258,7 @@ func setPersonalDeduction(c echo.Context) error {
 	}
 
 	// after validation
-	// Bind JSON to struct
+	// bind JSON to struct
 	d := new(Deduction)
 	if err := json.Unmarshal(body, d); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
