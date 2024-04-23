@@ -51,12 +51,14 @@ func HandleTaxCalculation(c echo.Context) error {
 	donations := initialdonations
 	kReceipts := initialkReceipts
 
-	countredundant := 0 //เพื่อถ้าเกิน 1 ก็คือuserกรอกซ้ำมา
+	countredundantp := 0 //เพื่อถ้าเกิน 1 ก็คือuserกรอกซ้ำมา
+	countredundantd := 0
+	countredundantk := 0
 	// loop และแยก allowance 3 types แล้วเทียบ เพื่อได้ค่าที่นำไปใช้ได้
 	for _, allowance := range req.Allowances {
 		if allowance.AllowanceType == "personal" {
-			countredundant += 1
-			if countredundant > 1 {
+			countredundantp += 1
+			if countredundantp > 1 {
 				return echo.NewHTTPError(http.StatusBadRequest, "allowanceType personal is redundant, please check and fill again")
 			}
 			if allowance.Amount <= 10000 {
@@ -70,8 +72,8 @@ func HandleTaxCalculation(c echo.Context) error {
 		}
 
 		if allowance.AllowanceType == "donation" {
-			countredundant += 1
-			if countredundant > 1 {
+			countredundantd += 1
+			if countredundantd > 1 {
 				return echo.NewHTTPError(http.StatusBadRequest, "allowanceType donation is redundant, please check and fill again")
 			}
 			if allowance.Amount >= 0 {
@@ -85,8 +87,8 @@ func HandleTaxCalculation(c echo.Context) error {
 		}
 
 		if allowance.AllowanceType == "k-receipt" {
-			countredundant += 1
-			if countredundant > 1 {
+			countredundantk += 1
+			if countredundantk > 1 {
 				return echo.NewHTTPError(http.StatusBadRequest, "allowanceType k-receipt is redundant, please check and fill again")
 			}
 			if allowance.Amount > 0 {
