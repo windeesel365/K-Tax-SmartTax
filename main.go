@@ -67,6 +67,11 @@ type jwtCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+type PersonalDeduction struct {
+	ID                int
+	PersonalDeduction float64
+}
+
 // initialize value
 var initialPersonalExemption float64 = 60000.0
 var initialdonations float64 = 0.0
@@ -77,10 +82,9 @@ var personalExemptionUpperLimit float64 = 100000.0
 var donationsUpperLimit float64 = 100000.0
 var kReceiptsUpperLimit float64 = 50000.0
 
-// declare สำหรับ ref database
+// declare สำหรับ ref database และ idข้อมูล postgresql
 var db *sql.DB
-
-//pending
+var id int
 
 func main() {
 
@@ -129,7 +133,59 @@ func main() {
 
 	fmt.Println("PostgreSQL: Connected successfully.")
 
+	// create 'deductions' table เพื่อเตรียมสำหรับ admin ปรับค่า
+	err = createAdminDeductionsTable(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("PostgreSQL: Created admin deductions table successfully.")
+
+	// count คือจำนวน row ใน table ณ จุดเวลา
+	count, err := CountRows(db, "deductions")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// ถ้า count น้อยกว่า 1, ถึงยอมให้สร้าง row ใหม่
+	if count < 1 {
+		id, err := createDeduction(db, initialPersonalExemption, kReceiptsUpperLimit)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("PostgreSQL: Created admin deductions row with id: %d, initialPersonalExemption: %f\n kReceiptsUpperLimit: %f\n", id, initialPersonalExemption, kReceiptsUpperLimit)
+	} //else ไปเช็คค่าใน db
+
+	// ใช้ row แรกสุด คือ id แรกสุด ในการ update และ read
+	lowestID, err := getLowestID(db, "deductions")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	id = lowestID // id เป็น id สำหรับ ref ข้อมูล postgresql
+
+	//เช็ค authentication ของ admin
+	adminUsername := os.Getenv("ADMIN_USERNAME")
+	adminPassword := os.Getenv("ADMIN_PASSWORD")
+
+	basicAuthMiddleware := middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+		isAuthenticated := username == adminUsername && password == adminPassword
+		if !isAuthenticated {
+			// log เพื่อ notice failed attempt
+			log.Printf("Failed login attempt for username: %s", username)
+			// ส่ง customize response message to client
+			return false, echo.NewHTTPError(http.StatusUnauthorized, "There was a problem logging in. Check your username and password.")
+		}
+		return isAuthenticated, nil
+	})
+
 	e.POST("/tax/calculations", HandleTaxCalculation)
+
+	adminGroup := e.Group("/admin")
+	adminGroup.Use(basicAuthMiddleware)
+
+	adminGroup.POST("/login", login)
+
+	adminGroup.POST("/deductions/personal", setPersonalDeduction)
 
 	//graceful shutdown //start server in goroutine
 	go func() {
@@ -152,5 +208,5 @@ func main() {
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
 	}
-	//pending
+
 }
