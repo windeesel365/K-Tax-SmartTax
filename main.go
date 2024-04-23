@@ -182,6 +182,7 @@ func main() {
 	})
 
 	e.POST("/tax/calculations", HandleTaxCalculation)
+	e.POST("/tax/calculations/upload-csv", handleFileUpload)
 
 	adminGroup := e.Group("/admin")
 	adminGroup.Use(basicAuthMiddleware)
