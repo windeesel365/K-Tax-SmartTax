@@ -37,7 +37,7 @@ func HandleTaxCalculation(c echo.Context) error {
 	}
 
 	// validate JSON order
-	if err := checkJSONOrder(body, expectedKeys); err != nil {
+	if err := CheckJSONOrder(body, expectedKeys); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 

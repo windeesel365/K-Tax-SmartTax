@@ -134,40 +134,11 @@ func main() {
 	//pending
 }
 
-// checkJSONOrder checks if the keys in the provided JSON body are in the expected order.
-func checkJSONOrder(body []byte, expectedKeys []string) error {
-
-	keys, err := GetOrderedKeysFromJSON(body)
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
-
-	keys = keys[0:len(expectedKeys)]
-
-	expectedKeysMembers := strings.Join(expectedKeys, ", ")
-
-	if len(keys) != len(expectedKeys) {
-		return fmt.Errorf("please enter just %d key(s) ordered by: %s. Then process again", len(expectedKeys), expectedKeysMembers)
-	}
-
-	for i, key := range keys {
-		if key != expectedKeys[i] {
-			//if key != expectedKeys[i] && !unexpectedform {
-			return fmt.Errorf("please enter data in correct order, key name: %s. Then process again", expectedKeysMembers)
-		}
-	}
-
-	// clear keys after processing
-	keys = nil
-
-	return nil
-}
-
-// Function to extract keys from JSON string preserving order
+// function to extract keys from JSON string preserving order
 func GetOrderedKeysFromJSON(jsonStr []byte) ([]string, error) {
 	var keys []string
 
-	// สร้างตัวถอดรหัส JSON
+	// สร้างตัวถอดรหัสJSON
 	decoder := json.NewDecoder(strings.NewReader(string(jsonStr)))
 
 	// อ่านโทเคนจาก JSON  โดยต่อเนื่อง
@@ -175,7 +146,7 @@ func GetOrderedKeysFromJSON(jsonStr []byte) ([]string, error) {
 		// เรียก Token + จัดการข้อผิดพลาด
 		token, err := decoder.Token()
 		if err != nil {
-			break //หยุดลูปถ้าเกิดผิดพลาด
+			break //หยุดลูปถ้าผิดพลาด
 		}
 
 		// ถ้า token เป็น key ให้ append เข้า keys slice
