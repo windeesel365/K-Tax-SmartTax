@@ -88,7 +88,7 @@ func HandleTaxCalculation(c echo.Context) error {
 	}
 
 	// หา taxable income
-	taxableIncome := caltaxableIncome(req.TotalIncome, personalExemption, donations, kReceipts)
+	taxableIncome := CaltaxableIncome(req.TotalIncome, personalExemption, donations, kReceipts)
 
 	// หา taxPayable, taxRefund
 	taxPayable, taxRefund := CalculateTaxPayableAndRefund(taxableIncome, req.WHT)
