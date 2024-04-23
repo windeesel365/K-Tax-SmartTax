@@ -51,9 +51,14 @@ func HandleTaxCalculation(c echo.Context) error {
 	donations := initialdonations
 	kReceipts := initialkReceipts
 
+	countredundant := 0 //เพื่อถ้าเกิน 1 ก็คือuserกรอกซ้ำมา
 	// loop และแยก allowance 3 types แล้วเทียบ เพื่อได้ค่าที่นำไปใช้ได้
 	for _, allowance := range req.Allowances {
 		if allowance.AllowanceType == "personal" {
+			countredundant += 1
+			if countredundant > 1 {
+				return echo.NewHTTPError(http.StatusBadRequest, "allowanceType personal is redundant, please check and fill again")
+			}
 			if allowance.Amount <= 10000 {
 				return c.JSON(http.StatusBadRequest, echo.Map{"error": "The personal exemption must be more than 10,000 THB.  Please update the amount and try again."})
 
@@ -65,6 +70,10 @@ func HandleTaxCalculation(c echo.Context) error {
 		}
 
 		if allowance.AllowanceType == "donation" {
+			countredundant += 1
+			if countredundant > 1 {
+				return echo.NewHTTPError(http.StatusBadRequest, "allowanceType donation is redundant, please check and fill again")
+			}
 			if allowance.Amount >= 0 {
 				donations += allowance.Amount
 				if donations > donationsUpperLimit {
@@ -76,6 +85,10 @@ func HandleTaxCalculation(c echo.Context) error {
 		}
 
 		if allowance.AllowanceType == "k-receipt" {
+			countredundant += 1
+			if countredundant > 1 {
+				return echo.NewHTTPError(http.StatusBadRequest, "allowanceType k-receipt is redundant, please check and fill again")
+			}
 			if allowance.Amount > 0 {
 				kReceipts += allowance.Amount
 				if kReceipts > kReceiptsUpperLimit {
