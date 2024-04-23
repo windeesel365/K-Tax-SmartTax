@@ -3,7 +3,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -100,7 +99,6 @@ func HandleTaxCalculation(c echo.Context) error {
 	responseMap := map[string]interface{}{
 		"tax": response.Tax,
 	}
-	fmt.Println(responseMap)
 
 	// รวม taxRefund เข้า map ถ้า taxRefund ไม่เป็นzero
 	if response.TaxRefund > 0 {
@@ -111,7 +109,7 @@ func HandleTaxCalculation(c echo.Context) error {
 	if response.Tax > 0 {
 		//ทำ taxLevelDetails
 		taxLevelDetails := CalculateTaxLevelDetails(taxableIncome)
-		fmt.Println(taxLevelDetails)
+
 		output := map[string]interface{}{
 			"taxLevel": taxLevelDetails,
 		}

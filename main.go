@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"reflect"
 	"regexp"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
+	"github.com/windeesel365/assessment-tax/pgdb"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -137,21 +137,21 @@ func main() {
 	fmt.Println("PostgreSQL: Connected successfully.")
 
 	// create 'deductions' table เพื่อเตรียมสำหรับ admin ปรับค่า
-	err = createAdminDeductionsTable(db)
+	err = pgdb.CreateAdminDeductionsTable(db)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("PostgreSQL: Created admin deductions table successfully.")
 
 	// count คือจำนวน row ใน table ณ จุดเวลา
-	count, err := CountRows(db, "deductions")
+	count, err := pgdb.CountRows(db, "deductions")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// ถ้า count น้อยกว่า 1, ถึงยอมให้สร้าง row ใหม่
 	if count < 1 {
-		id, err := createDeduction(db, initialPersonalExemption, kReceiptsUpperLimit)
+		id, err := pgdb.CreateDeduction(db, initialPersonalExemption, kReceiptsUpperLimit)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -159,7 +159,7 @@ func main() {
 	} //else ไปเช็คค่าใน db
 
 	// ใช้ row แรกสุด คือ id แรกสุด ในการ update และ read
-	lowestID, err := getLowestID(db, "deductions")
+	lowestID, err := pgdb.GetLowestID(db, "deductions")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -243,52 +243,6 @@ func login(c echo.Context) error {
 	})
 }
 
-func createAdminDeductionsTable(db *sql.DB) error {
-	// SQL statement เพื่อ create 'deductions' table
-	createTableSQL := `
-		CREATE TABLE IF NOT EXISTS deductions (
-			id SERIAL PRIMARY KEY,
-			personal_deduction INTEGER NOT NULL,
-			k_receipt_deduction INTEGER NOT NULL
-		);
-	`
-	// Execute SQL statement ข้างบน
-	_, err := db.Exec(createTableSQL)
-	return err
-}
-
-func createDeduction(db *sql.DB, personalDeduction float64, kReceiptDeduction float64) (int, error) {
-	var id int
-	err := db.QueryRow(`INSERT INTO deductions(personal_deduction, k_receipt_deduction) VALUES($1, $2) RETURNING id;`, personalDeduction, kReceiptDeduction).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
-}
-
-// CountRows นับจำนวน row ของ table ใน database
-func CountRows(db *sql.DB, tableName string) (int, error) {
-	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM " + tableName).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-func getLowestID(db *sql.DB, tableName string) (int, error) {
-	var lowestID int
-	// query select lowest ID จาก table
-	query := "SELECT MIN(id) FROM " + tableName
-
-	// query database
-	err := db.QueryRow(query).Scan(&lowestID)
-	if err != nil {
-		return 0, err
-	}
-	return lowestID, nil
-}
-
 // POST: /admin/deductions/personal
 func setPersonalDeduction(c echo.Context) error {
 	// Read body to a variable
@@ -314,12 +268,12 @@ func setPersonalDeduction(c echo.Context) error {
 	initialPersonalExemption = d.Amount
 
 	// update PersonalDeduction to postgres db
-	err = updatePersonalDeduction(db, id, initialPersonalExemption)
+	err = pgdb.UpdatePersonalDeduction(db, id, initialPersonalExemption)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// read after above update
-	adminPDeductions, err := getPersonalDeduction(db, id)
+	adminPDeductions, err := pgdb.GetPersonalDeduction(db, id)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -327,87 +281,4 @@ func setPersonalDeduction(c echo.Context) error {
 
 	//respond client(admin)
 	return c.JSON(http.StatusOK, map[string]CustomFloat64{"personalDeduction": CustomFloat64(d.Amount)})
-}
-
-func getPersonalDeduction(db *sql.DB, id int) (PersonalDeduction, error) {
-	var deduc PersonalDeduction
-	row := db.QueryRow(`SELECT id, personal_deduction FROM deductions WHERE id = $1;`, id)
-	err := row.Scan(&deduc.ID, &deduc.PersonalDeduction)
-	if err != nil {
-		return PersonalDeduction{}, err
-	}
-	return deduc, nil
-}
-
-func updatePersonalDeduction(db *sql.DB, id int, personalDeduction float64) error {
-	_, err := db.Exec(`UPDATE deductions SET personal_deduction = $1 WHERE id = $2;`, personalDeduction, id)
-	return err
-}
-
-// Validation   input data for personal deductions
-func validatePersonalInput(body []byte) error {
-	//validate raw JSON not empty
-	if len(body) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "Please provide input data")
-	}
-
-	//validate raw JSON root-level key count ว่าmatch  key count of correct pattern
-	expectedKeys := []string{"amount"}
-	count, err := JsonRootLevelKeyCount(string(body))
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
-	}
-	if count != len(expectedKeys) {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input. Please ensure you enter only one amount, corresponding to setting value of personal deduction.")
-	}
-
-	//validate raw JSON root-level key count order
-	if err := CheckJSONOrder(body, expectedKeys); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-	}
-
-	//validate struct และ amount
-	d := new(Deduction)
-	if err := json.Unmarshal(body, d); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
-	}
-
-	if err := validateFields(body, d); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format. Please check the input format again")
-	}
-
-	if d.Amount > 100000.0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure Personal Deduction amount does not exceed THB 100,000.")
-	}
-
-	if d.Amount <= 10000.0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure Personal Deduction must be more than THB 10000.")
-	}
-
-	return nil
-}
-
-// validateFields matches the number of JSON keys to the number of struct fields
-func validateFields(data []byte, d *Deduction) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-
-	// Get number of fields in Deduction struct
-	t := reflect.TypeOf(*d)
-	deductionFieldCount := 0
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		if tag := field.Tag.Get("json"); tag != "" && tag != "-" {
-			deductionFieldCount++
-		}
-	}
-
-	// Check if numbers of fields match
-	if len(raw) != deductionFieldCount {
-		return fmt.Errorf("number of fields in JSON (%d) does not match number of fields in Deduction (%d)", len(raw), deductionFieldCount)
-	}
-
-	return nil
 }
