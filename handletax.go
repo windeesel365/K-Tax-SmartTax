@@ -28,12 +28,12 @@ func HandleTaxCalculation(c echo.Context) error {
 
 	for _, part := range parts {
 
-		//check ว่าถ้า strings.Count "allowanceType" อยู่ใน string มากกว่า 1 ครั้ง
+		//checkว่าถ้า strings.Count "allowanceType" อยู่ใน string มากกว่า 1 ครั้ง
 		if strings.Count(part, "allowanceType") > 1 {
 			return echo.NewHTTPError(http.StatusBadRequest, "Input data 'allowanceType' more than once, check and fill again")
 		}
 
-		//check ว่าถ้า strings.Count "amount" อยู่ใน string มากกว่า 1 ครั้ง
+		//checkว่าถ้า strings.Count "amount" อยู่ใน string มากกว่า 1 ครั้ง
 		if strings.Count(part, "amount") > 1 {
 			return echo.NewHTTPError(http.StatusBadRequest, "Input data 'amount' more than once, check and fill again")
 		}
