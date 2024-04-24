@@ -1,9 +1,14 @@
-package main
+package taxcal
 
 import (
 	"fmt"
 	"strconv"
 )
+
+type TaxLevel struct {
+	Level string        `json:"level"`
+	Tax   CustomFloat64 `json:"tax"`
+}
 
 func CalculateTaxLevelDetails(taxableIncome float64) []TaxLevel {
 	taxLevels := []struct {

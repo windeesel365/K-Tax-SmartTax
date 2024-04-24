@@ -1,4 +1,4 @@
-package main
+package taxcal
 
 import (
 	"reflect"

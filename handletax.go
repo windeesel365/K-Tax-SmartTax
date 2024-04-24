@@ -129,7 +129,7 @@ func HandleTaxCalculation(c echo.Context) error {
 	//applytaxlevel
 	if response.Tax > 0 {
 		//ทำ taxLevelDetails
-		taxLevelDetails := CalculateTaxLevelDetails(taxableIncome)
+		taxLevelDetails := taxcal.CalculateTaxLevelDetails(taxableIncome)
 
 		output := map[string]interface{}{
 			"taxLevel": taxLevelDetails,
