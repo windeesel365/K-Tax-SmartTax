@@ -17,6 +17,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
+	"github.com/windeesel365/assessment-tax/jsonvalidate"
 	"github.com/windeesel365/assessment-tax/pgdb"
 
 	"github.com/labstack/echo/v4"
@@ -73,6 +74,11 @@ type jwtCustomClaims struct {
 type PersonalDeduction struct {
 	ID                int
 	PersonalDeduction float64
+}
+
+type KReceiptDeduction struct {
+	ID                        int
+	UpperLimKReceiptDeduction float64
 }
 
 // initialize value
@@ -190,6 +196,7 @@ func main() {
 	adminGroup.POST("/login", login)
 
 	adminGroup.POST("/deductions/personal", setPersonalDeduction)
+	adminGroup.POST("/deductions/k-receipt", setKReceiptDeduction)
 
 	//graceful shutdown //start server in goroutine
 	go func() {
@@ -282,4 +289,106 @@ func setPersonalDeduction(c echo.Context) error {
 
 	//respond client(admin)
 	return c.JSON(http.StatusOK, map[string]CustomFloat64{"personalDeduction": CustomFloat64(d.Amount)})
+}
+
+// POST: /admin/deductions/k-receipt
+func setKReceiptDeduction(c echo.Context) error {
+	// Read body to a variable
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
+	}
+	defer c.Request().Body.Close()
+
+	// function to combine validation
+	if err := validateInputsetKReceipt(body); err != nil {
+		return err
+	}
+
+	// after validation
+	// Bind JSON to struct
+	d := new(Deduction)
+	if err := json.Unmarshal(body, d); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
+	}
+
+	// Set change to kReceiptsUpperLimit
+	kReceiptsUpperLimit = d.Amount
+
+	// postgresql part
+	// update KReceiptDeduction to postgres db
+	err = updateKReceiptDeduction(db, id, kReceiptsUpperLimit)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// read after above update
+	adminKDeductions, err := getKReceiptDeduction(db, id)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("***********\nAdmin updated kReceiptsUpperLimit validated then updated postgresql row: %+v\n", adminKDeductions)
+
+	//respond to client(admin)
+	return c.JSON(http.StatusOK, map[string]CustomFloat64{
+		"kReceipt": CustomFloat64(d.Amount)})
+
+}
+
+// Validation input data of setKReceipt
+func validateInputsetKReceipt(body []byte) error {
+	//validate raw JSON not empty
+	if len(body) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Please provide input data")
+	}
+
+	//validate raw JSON root-level key count match the key count of correct pattern
+	expectedKeys := []string{"amount"}
+	count, err := jsonvalidate.JsonRootLevelKeyCount(string(body))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
+	}
+	if count != len(expectedKeys) {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input. Please ensure you enter only one amount, corresponding to setting upper limit of k-receipt.")
+	}
+
+	//validate raw JSON root-level key count order
+	if err := jsonvalidate.CheckJSONOrder(body, expectedKeys); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	//validate struct and amount
+	d := new(Deduction)
+	if err := json.Unmarshal(body, d); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
+	}
+
+	if err := validateFields(body, d); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format. Please check the input format again")
+	}
+
+	if d.Amount > 100000.0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure kReceipt UpperLimit does not exceed THB 100,000.")
+	}
+
+	if d.Amount <= 0.0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure kReceipt UpperLimit must be more than THB 0.")
+	}
+
+	return nil
+}
+
+func getKReceiptDeduction(db *sql.DB, id int) (KReceiptDeduction, error) {
+	var deduc KReceiptDeduction
+	row := db.QueryRow(`SELECT id, k_receipt_deduction FROM deductions WHERE id = $1;`, id)
+	err := row.Scan(&deduc.ID, &deduc.UpperLimKReceiptDeduction)
+	if err != nil {
+		return KReceiptDeduction{}, err
+	}
+	return deduc, nil
+}
+
+func updateKReceiptDeduction(db *sql.DB, id int, upperLimKReceiptDeduction float64) error {
+	_, err := db.Exec(`UPDATE deductions SET k_receipt_deduction = $1 WHERE id = $2;`, upperLimKReceiptDeduction, id)
+	return err
 }
