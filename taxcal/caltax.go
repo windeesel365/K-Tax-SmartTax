@@ -1,4 +1,4 @@
-package main
+package taxcal
 
 // func calculate tax ตาม tax brackets
 // รองรับแค่ปีเดียวคือ 2567 ( 2024)

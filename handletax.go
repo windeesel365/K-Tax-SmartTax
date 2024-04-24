@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/windeesel365/assessment-tax/taxcal"
 )
 
 func HandleTaxCalculation(c echo.Context) error {
@@ -111,9 +112,9 @@ func HandleTaxCalculation(c echo.Context) error {
 	taxableIncome := CaltaxableIncome(req.TotalIncome, personalExemption, donations, kReceipts)
 
 	// หา taxPayable, taxRefund
-	taxPayable, taxRefund := CalculateTaxPayableAndRefund(taxableIncome, req.WHT)
+	taxPayable, taxRefund := taxcal.CalculateTaxPayableAndRefund(taxableIncome, req.WHT)
 
-	response := TaxResponse{Tax: taxPayable, TaxRefund: taxRefund}
+	response := TaxResponse{Tax: CustomFloat64(taxPayable), TaxRefund: CustomFloat64(taxRefund)}
 
 	// เปลี่ยน response เป็น map ดึง tax มาจาก response
 	responseMap := map[string]interface{}{

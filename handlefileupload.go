@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/windeesel365/assessment-tax/taxcal"
 )
 
 func handleFileUpload(c echo.Context) error {
@@ -81,15 +82,15 @@ func handleFileUpload(c echo.Context) error {
 		taxableIncome := CaltaxableIncome(totalIncomeBefore, personalExemption, donations, kReceipts)
 
 		// หา taxPayable, taxRefund
-		taxPayable, taxRefund := CalculateTaxPayableAndRefund(taxableIncome, wht)
+		taxPayable, taxRefund := taxcal.CalculateTaxPayableAndRefund(taxableIncome, wht)
 
 		// แสดงผลลัพธ์ตามรูปแบบ CustomFloat64(decimalทศนิยมแสดงdigitเดียว)
 		totalIncome := CustomFloat64(totalIncomeBefore)
 
 		results = append(results, IncomewithTaxResponse{
 			Totalincome: totalIncome,
-			Tax:         taxPayable,
-			TaxRefund:   taxRefund,
+			Tax:         CustomFloat64(taxPayable),
+			TaxRefund:   CustomFloat64(taxRefund),
 		})
 
 	}
