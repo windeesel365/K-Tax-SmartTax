@@ -264,14 +264,14 @@ func setPersonalDeduction(c echo.Context) error {
 		return err
 	}
 
-	// after validation
+	// หลังจากการ validation
 	// bind JSON to struct
 	d := new(Deduction)
 	if err := json.Unmarshal(body, d); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
 	}
 
-	// Set change to initialPersonalExemption
+	// set change to initialPersonalExemption
 	initialPersonalExemption = d.Amount
 
 	// update PersonalDeduction to postgres db
@@ -304,7 +304,7 @@ func setKReceiptDeduction(c echo.Context) error {
 		return err
 	}
 
-	// after validation
+	// หลังจากการ validation
 	// Bind JSON to struct
 	d := new(Deduction)
 	if err := json.Unmarshal(body, d); err != nil {
