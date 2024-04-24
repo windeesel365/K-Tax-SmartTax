@@ -1,4 +1,4 @@
-package main
+package jsonvalidate
 
 import "encoding/json"
 

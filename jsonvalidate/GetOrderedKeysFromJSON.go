@@ -1,5 +1,5 @@
 // function to extract keys from JSON string   preserving order
-package main
+package jsonvalidate
 
 import (
 	"encoding/json"

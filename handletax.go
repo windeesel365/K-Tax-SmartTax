@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/windeesel365/assessment-tax/jsonvalidate"
 	"github.com/windeesel365/assessment-tax/taxcal"
 )
 
@@ -29,7 +30,7 @@ func HandleTaxCalculation(c echo.Context) error {
 	expectedKeys := []string{"totalIncome", "wht", "allowances"}
 
 	// validate JSON top-level keys count
-	count, err := JsonRootLevelKeyCount(string(body))
+	count, err := jsonvalidate.JsonRootLevelKeyCount(string(body))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
 	}
@@ -38,7 +39,7 @@ func HandleTaxCalculation(c echo.Context) error {
 	}
 
 	// validate JSON order
-	if err := CheckJSONOrder(body, expectedKeys); err != nil {
+	if err := jsonvalidate.CheckJSONOrder(body, expectedKeys); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 

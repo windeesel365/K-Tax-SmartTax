@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/windeesel365/assessment-tax/jsonvalidate"
 )
 
 // validae input data ของ personal deductions
@@ -16,7 +17,7 @@ func validatePersonalInput(body []byte) error {
 
 	//validate raw JSON root-level key count ว่าmatch  key count of correct pattern
 	expectedKeys := []string{"amount"}
-	count, err := JsonRootLevelKeyCount(string(body))
+	count, err := jsonvalidate.JsonRootLevelKeyCount(string(body))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
 	}
@@ -25,7 +26,7 @@ func validatePersonalInput(body []byte) error {
 	}
 
 	//validate raw JSON root-level key count order
-	if err := CheckJSONOrder(body, expectedKeys); err != nil {
+	if err := jsonvalidate.CheckJSONOrder(body, expectedKeys); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
