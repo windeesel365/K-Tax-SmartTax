@@ -3,6 +3,7 @@ package validityguard
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/windeesel365/assessment-tax/jsonvalidate"
@@ -13,6 +14,14 @@ func ValidatePersonalInput(body []byte) error {
 	//validate raw JSON not empty
 	if len(body) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Please provide input data")
+	}
+
+	//แปลง byte array เป็น string
+	jsonString := string(body)
+
+	//check if strings.Count "amount" อยู่ใน string มากกว่า 1 ครั้ง
+	if strings.Count(jsonString, "amount") > 1 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Input data 'amount' more than once, check and fill again")
 	}
 
 	//validate raw JSON root-level key count ว่าmatch  key count of correct pattern
