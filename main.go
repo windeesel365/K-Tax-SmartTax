@@ -316,12 +316,12 @@ func setKReceiptDeduction(c echo.Context) error {
 
 	// postgresql part
 	// update KReceiptDeduction to postgres db
-	err = updateKReceiptDeduction(db, id, kReceiptsUpperLimit)
+	err = pgdb.UpdateKReceiptDeduction(db, id, kReceiptsUpperLimit)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// read after above update
-	adminKDeductions, err := getKReceiptDeduction(db, id)
+	adminKDeductions, err := pgdb.GetKReceiptDeduction(db, id)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -332,19 +332,4 @@ func setKReceiptDeduction(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]CustomFloat64{
 		"kReceipt": CustomFloat64(d.Amount)})
 
-}
-
-func getKReceiptDeduction(db *sql.DB, id int) (KReceiptDeduction, error) {
-	var deduc KReceiptDeduction
-	row := db.QueryRow(`SELECT id, k_receipt_deduction FROM deductions WHERE id = $1;`, id)
-	err := row.Scan(&deduc.ID, &deduc.UpperLimKReceiptDeduction)
-	if err != nil {
-		return KReceiptDeduction{}, err
-	}
-	return deduc, nil
-}
-
-func updateKReceiptDeduction(db *sql.DB, id int, upperLimKReceiptDeduction float64) error {
-	_, err := db.Exec(`UPDATE deductions SET k_receipt_deduction = $1 WHERE id = $2;`, upperLimKReceiptDeduction, id)
-	return err
 }

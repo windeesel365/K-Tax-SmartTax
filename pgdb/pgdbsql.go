@@ -7,6 +7,11 @@ type PersonalDeduction struct {
 	PersonalDeduction float64
 }
 
+type KReceiptDeduction struct {
+	ID                        int
+	UpperLimKReceiptDeduction float64
+}
+
 func CreateAdminDeductionsTable(db *sql.DB) error {
 	//SQL statement เพื่อ create 'deductions' table
 	createTableSQL := `
@@ -65,5 +70,20 @@ func GetPersonalDeduction(db *sql.DB, id int) (PersonalDeduction, error) {
 
 func UpdatePersonalDeduction(db *sql.DB, id int, personalDeduction float64) error {
 	_, err := db.Exec(`UPDATE deductions SET personal_deduction = $1 WHERE id = $2;`, personalDeduction, id)
+	return err
+}
+
+func GetKReceiptDeduction(db *sql.DB, id int) (KReceiptDeduction, error) {
+	var deduc KReceiptDeduction
+	row := db.QueryRow(`SELECT id, k_receipt_deduction FROM deductions WHERE id = $1;`, id)
+	err := row.Scan(&deduc.ID, &deduc.UpperLimKReceiptDeduction)
+	if err != nil {
+		return KReceiptDeduction{}, err
+	}
+	return deduc, nil
+}
+
+func UpdateKReceiptDeduction(db *sql.DB, id int, upperLimKReceiptDeduction float64) error {
+	_, err := db.Exec(`UPDATE deductions SET k_receipt_deduction = $1 WHERE id = $2;`, upperLimKReceiptDeduction, id)
 	return err
 }
