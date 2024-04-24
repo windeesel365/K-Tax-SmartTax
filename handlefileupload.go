@@ -79,7 +79,7 @@ func handleFileUpload(c echo.Context) error {
 		kReceipts := initialkReceipts
 
 		// หา taxable income
-		taxableIncome := CaltaxableIncome(totalIncomeBefore, personalExemption, donations, kReceipts)
+		taxableIncome := taxcal.CaltaxableIncome(totalIncomeBefore, personalExemption, donations, kReceipts)
 
 		// หา taxPayable, taxRefund
 		taxPayable, taxRefund := taxcal.CalculateTaxPayableAndRefund(taxableIncome, wht)
