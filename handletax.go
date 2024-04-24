@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/windeesel365/assessment-tax/jsonvalidate"
@@ -19,6 +21,23 @@ func HandleTaxCalculation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
 	}
 	defer c.Request().Body.Close()
+
+	// split จาก '{' และ '}' เพื่อเอาmember จะได้เช็ค redundantได้
+	re := regexp.MustCompile(`[{}]`)
+	parts := re.Split(string(body), -1)
+
+	for _, part := range parts {
+
+		//check ว่าถ้า strings.Count "allowanceType" อยู่ใน string มากกว่า 1 ครั้ง
+		if strings.Count(part, "allowanceType") > 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, "Input data 'allowanceType' more than once, check and fill again")
+		}
+
+		//check ว่าถ้า strings.Count "amount" อยู่ใน string มากกว่า 1 ครั้ง
+		if strings.Count(part, "amount") > 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, "Input data 'amount' more than once, check and fill again")
+		}
+	}
 
 	// bind JSON to struct และ check error
 	req := new(TaxRequest)
@@ -57,8 +76,10 @@ func HandleTaxCalculation(c echo.Context) error {
 	countredundantp := 0 //เพื่อถ้าเกิน 1 ก็คือuserกรอกซ้ำมา
 	countredundantd := 0
 	countredundantk := 0
+
 	// loop และแยก allowance 3 types แล้วเทียบ เพื่อได้ค่าที่นำไปใช้ได้
 	for _, allowance := range req.Allowances {
+
 		if allowance.AllowanceType == "personal" {
 			countredundantp += 1
 			if countredundantp > 1 {
