@@ -18,6 +18,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
 	"github.com/windeesel365/assessment-tax/pgdb"
+	"github.com/windeesel365/assessment-tax/validityguard"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -252,7 +253,7 @@ func login(c echo.Context) error {
 
 // POST: /admin/deductions/personal
 func setPersonalDeduction(c echo.Context) error {
-	// Read body to a variable
+	// read Body ให้เป็น variable
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
@@ -260,7 +261,7 @@ func setPersonalDeduction(c echo.Context) error {
 	defer c.Request().Body.Close()
 
 	// validation function process
-	if err := validatePersonalInput(body); err != nil {
+	if err := validityguard.ValidatePersonalInput(body); err != nil {
 		return err
 	}
 
@@ -279,7 +280,7 @@ func setPersonalDeduction(c echo.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// read after above update
+	// read หลังการ update ทำ log ในระบบ
 	adminPDeductions, err := pgdb.GetPersonalDeduction(db, id)
 	if err != nil {
 		log.Fatal(err)
@@ -300,7 +301,7 @@ func setKReceiptDeduction(c echo.Context) error {
 	defer c.Request().Body.Close()
 
 	// function to combine validation
-	if err := validateInputsetKReceipt(body); err != nil {
+	if err := validityguard.ValidateInputsetKReceipt(body); err != nil {
 		return err
 	}
 
@@ -320,7 +321,7 @@ func setKReceiptDeduction(c echo.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// read after above update
+	// read หลังการ update ทำ log ในระบบ
 	adminKDeductions, err := pgdb.GetKReceiptDeduction(db, id)
 	if err != nil {
 		log.Fatal(err)

@@ -1,4 +1,4 @@
-package main
+package validityguard
 
 import (
 	"encoding/json"

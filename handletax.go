@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/windeesel365/assessment-tax/jsonvalidate"
 	"github.com/windeesel365/assessment-tax/taxcal"
+	"github.com/windeesel365/assessment-tax/validityguard"
 )
 
 func HandleTaxCalculation(c echo.Context) error {
@@ -44,7 +45,7 @@ func HandleTaxCalculation(c echo.Context) error {
 	}
 
 	// รวมการ Validate amount ของ struct req  values
-	if err := ValidateTaxRequestAmount(*req); err != nil {
+	if err := validityguard.ValidateTaxRequestAmount(validityguard.TaxRequest(*req)); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 

@@ -1,6 +1,16 @@
-package main
+package validityguard
 
 import "fmt"
+
+// data structure pattern ที่ user client request
+type TaxRequest struct {
+	TotalIncome float64 `json:"totalIncome"`
+	WHT         float64 `json:"wht"`
+	Allowances  []struct {
+		AllowanceType string  `json:"allowanceType"`
+		Amount        float64 `json:"amount"`
+	} `json:"allowances"`
+}
 
 // validate taxRequest struct
 func ValidateTaxRequestAmount(req TaxRequest) error {

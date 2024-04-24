@@ -1,4 +1,4 @@
-package main
+package validityguard
 
 import (
 	"encoding/json"
@@ -8,21 +8,21 @@ import (
 	"github.com/windeesel365/assessment-tax/jsonvalidate"
 )
 
-// validation input data ของ setKReceipt
-func validateInputsetKReceipt(body []byte) error {
+// validae input data ของ personal deductions
+func ValidatePersonalInput(body []byte) error {
 	//validate raw JSON not empty
 	if len(body) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Please provide input data")
 	}
 
-	//validate raw JSON root-level key count match กับ key count of correct pattern
+	//validate raw JSON root-level key count ว่าmatch  key count of correct pattern
 	expectedKeys := []string{"amount"}
 	count, err := jsonvalidate.JsonRootLevelKeyCount(string(body))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input")
 	}
 	if count != len(expectedKeys) {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input. Please ensure you enter only one amount, corresponding to setting upper limit of k-receipt.")
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input. Please ensure you enter only one amount, corresponding to setting value of personal deduction.")
 	}
 
 	//validate raw JSON root-level key count order
@@ -30,7 +30,7 @@ func validateInputsetKReceipt(body []byte) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	//validate struct and amount
+	//validate struct และ amount
 	d := new(Deduction)
 	if err := json.Unmarshal(body, d); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid input format: "+err.Error())
@@ -41,11 +41,11 @@ func validateInputsetKReceipt(body []byte) error {
 	}
 
 	if d.Amount > 100000.0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure kReceipt UpperLimit does not exceed THB 100,000.")
+		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure Personal Deduction amount does not exceed THB 100,000.")
 	}
 
-	if d.Amount <= 0.0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure kReceipt UpperLimit must be more than THB 0.")
+	if d.Amount <= 10000.0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Please ensure Personal Deduction must be more than THB 10000.")
 	}
 
 	return nil

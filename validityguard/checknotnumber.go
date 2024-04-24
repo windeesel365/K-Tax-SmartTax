@@ -1,4 +1,4 @@
-package main
+package validityguard
 
 func IsNotNumber(val interface{}) bool {
 	switch val.(type) {

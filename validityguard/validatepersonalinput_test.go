@@ -1,4 +1,4 @@
-package main
+package validityguard
 
 import (
 	"testing"
@@ -53,7 +53,7 @@ func TestValidatePersonalInput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validatePersonalInput(tt.body)
+			err := ValidatePersonalInput(tt.body)
 			if tt.wantErr {
 				assert.Error(t, err)
 				httpErr, ok := err.(*echo.HTTPError)
