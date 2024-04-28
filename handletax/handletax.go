@@ -1,5 +1,5 @@
 // Handle tax calculation
-package main
+package handletax
 
 import (
 	"encoding/json"
@@ -9,10 +9,37 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/shopspring/decimal"
 	"github.com/windeesel365/assessment-tax/jsonvalidate"
+	"github.com/windeesel365/assessment-tax/sharedvars"
 	"github.com/windeesel365/assessment-tax/taxcal"
 	"github.com/windeesel365/assessment-tax/validityguard"
 )
+
+// CustomFloat64 เป็น float64 ที่ custom ใหม่
+type CustomFloat64 float64
+
+// customizes ตัวเลขการเงิน เพื่อ output decimal places ตามต้องการ
+func (cf CustomFloat64) MarshalJSON() ([]byte, error) {
+	d := decimal.NewFromFloat(float64(cf))     //จาก github.com/shopspring/decimal
+	formatted := d.RoundBank(1).StringFixed(1) // RoundBank เพื่อ banker's rounding // StringFixed ตำแหน่งทศนิยมในข้อมูลที่จะแสดงผล
+	return []byte(formatted), nil
+}
+
+// data structure pattern ที่ user client request
+type TaxRequest struct {
+	TotalIncome float64 `json:"totalIncome"`
+	WHT         float64 `json:"wht"`
+	Allowances  []struct {
+		AllowanceType string  `json:"allowanceType"`
+		Amount        float64 `json:"amount"`
+	} `json:"allowances"`
+}
+
+type TaxResponse struct {
+	Tax       CustomFloat64 `json:"tax"`
+	TaxRefund CustomFloat64 `json:"taxRefund,omitempty"`
+}
 
 func HandleTaxCalculation(c echo.Context) error {
 	// Read body to a variable
@@ -69,9 +96,9 @@ func HandleTaxCalculation(c echo.Context) error {
 	}
 
 	//allowance 3 types เริ่มมาจากค่าเริ่มต้น
-	personalExemption := initialPersonalExemption
-	donations := initialdonations
-	kReceipts := initialkReceipts
+	personalExemption := sharedvars.InitialPersonalExemption
+	donations := sharedvars.Initialdonations
+	kReceipts := sharedvars.InitialkReceipts
 
 	countredundantp := 0 //เพื่อถ้าเกิน 1 ก็คือuserกรอกซ้ำมา
 	countredundantd := 0
@@ -89,8 +116,8 @@ func HandleTaxCalculation(c echo.Context) error {
 				return c.JSON(http.StatusBadRequest, echo.Map{"error": "The personal exemption must be more than 10,000 THB.  Please update the amount and try again."})
 
 			} else {
-				if allowance.Amount > personalExemptionUpperLimit {
-					personalExemption = personalExemptionUpperLimit
+				if allowance.Amount > sharedvars.PersonalExemptionUpperLimit {
+					personalExemption = sharedvars.PersonalExemptionUpperLimit
 				}
 			}
 		}
@@ -102,8 +129,8 @@ func HandleTaxCalculation(c echo.Context) error {
 			}
 			if allowance.Amount >= 0 {
 				donations += allowance.Amount
-				if donations > donationsUpperLimit {
-					donations = donationsUpperLimit
+				if donations > sharedvars.DonationsUpperLimit {
+					donations = sharedvars.DonationsUpperLimit
 				}
 			} else {
 				return c.JSON(http.StatusBadRequest, echo.Map{"error": "The donation must be more than 0 THB. Please enter a positive amount and try again."})
@@ -117,8 +144,8 @@ func HandleTaxCalculation(c echo.Context) error {
 			}
 			if allowance.Amount > 0 {
 				kReceipts += allowance.Amount
-				if kReceipts > kReceiptsUpperLimit {
-					kReceipts = kReceiptsUpperLimit
+				if kReceipts > sharedvars.KReceiptsUpperLimit {
+					kReceipts = sharedvars.KReceiptsUpperLimit
 				}
 			} else {
 				return c.JSON(http.StatusBadRequest, echo.Map{"error": "The kReceipts must be more than 0 THB. Please enter a positive amount and try again."})

@@ -1,4 +1,4 @@
-package main
+package handlefileupload
 
 import (
 	"encoding/csv"
@@ -8,10 +8,28 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/shopspring/decimal"
+	"github.com/windeesel365/assessment-tax/sharedvars"
 	"github.com/windeesel365/assessment-tax/taxcal"
 )
 
-func handleFileUpload(c echo.Context) error {
+// CustomFloat64 เป็น float64 ที่ custom ใหม่
+type CustomFloat64 float64
+
+// customizes ตัวเลขการเงิน เพื่อ output decimal places ตามต้องการ
+func (cf CustomFloat64) MarshalJSON() ([]byte, error) {
+	d := decimal.NewFromFloat(float64(cf))     //จาก github.com/shopspring/decimal
+	formatted := d.RoundBank(1).StringFixed(1) // RoundBank เพื่อ banker's rounding // StringFixed ตำแหน่งทศนิยมในข้อมูลที่จะแสดงผล
+	return []byte(formatted), nil
+}
+
+type IncomewithTaxResponse struct {
+	Totalincome CustomFloat64 `json:"totalIncome"`
+	Tax         CustomFloat64 `json:"tax"`
+	TaxRefund   CustomFloat64 `json:"taxRefund,omitempty"`
+}
+
+func HandleFileUpload(c echo.Context) error {
 	// Retrieve uploaded file จาก form-data
 	file, err := c.FormFile("taxFile") //Postman API test ที่ Key กรอก taxFile
 	if err != nil {
@@ -75,8 +93,8 @@ func handleFileUpload(c echo.Context) error {
 
 		// csv ของ client ไม่มี personalExemption กับ kReceipts
 		// เราจึงใช้ค่าเริ่มต้น (ค่าเริ่มต้นของpersonalExemption admin ปรับได้ใน func setPersonalDeduction)
-		personalExemption := initialPersonalExemption
-		kReceipts := initialkReceipts
+		personalExemption := sharedvars.InitialPersonalExemption
+		kReceipts := sharedvars.InitialkReceipts
 
 		// หา taxable income
 		taxableIncome := taxcal.CaltaxableIncome(totalIncomeBefore, personalExemption, donations, kReceipts)

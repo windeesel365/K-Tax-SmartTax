@@ -17,22 +17,15 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/shopspring/decimal"
+	"github.com/windeesel365/assessment-tax/handlefileupload"
+	"github.com/windeesel365/assessment-tax/handletax"
 	"github.com/windeesel365/assessment-tax/pgdb"
+	"github.com/windeesel365/assessment-tax/sharedvars"
 	"github.com/windeesel365/assessment-tax/validityguard"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
-
-// data structure pattern ที่ user client request
-type TaxRequest struct {
-	TotalIncome float64 `json:"totalIncome"`
-	WHT         float64 `json:"wht"`
-	Allowances  []struct {
-		AllowanceType string  `json:"allowanceType"`
-		Amount        float64 `json:"amount"`
-	} `json:"allowances"`
-}
 
 // pattern ที่ admin input request
 type Deduction struct {
@@ -49,20 +42,9 @@ func (cf CustomFloat64) MarshalJSON() ([]byte, error) {
 	return []byte(formatted), nil
 }
 
-type TaxResponse struct {
-	Tax       CustomFloat64 `json:"tax"`
-	TaxRefund CustomFloat64 `json:"taxRefund,omitempty"`
-}
-
 type TaxLevel struct {
 	Level string        `json:"level"`
 	Tax   CustomFloat64 `json:"tax"`
-}
-
-type IncomewithTaxResponse struct {
-	Totalincome CustomFloat64 `json:"totalIncome"`
-	Tax         CustomFloat64 `json:"tax"`
-	TaxRefund   CustomFloat64 `json:"taxRefund,omitempty"`
 }
 
 type jwtCustomClaims struct {
@@ -80,20 +62,6 @@ type KReceiptDeduction struct {
 	ID                        int
 	UpperLimKReceiptDeduction float64
 }
-
-// initialize value
-var initialPersonalExemption float64 = 60000.0
-var initialdonations float64 = 0.0
-var initialkReceipts float64 = 0.0
-
-// initial exemptions กับค่า limits
-var personalExemptionUpperLimit float64 = 100000.0
-var donationsUpperLimit float64 = 100000.0
-var kReceiptsUpperLimit float64 = 50000.0
-
-// declare สำหรับ ref database และ idข้อมูล postgresql
-var db *sql.DB
-var id int
 
 func main() {
 
@@ -128,14 +96,14 @@ func main() {
 
 	// สร้าง connection กับ postgresql
 	var err error
-	db, err = sql.Open("postgres", databaseURL)
+	sharedvars.Db, err = sql.Open("postgres", databaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer sharedvars.Db.Close()
 
 	// Check the connection
-	err = db.Ping()
+	err = sharedvars.Db.Ping()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -143,34 +111,34 @@ func main() {
 	fmt.Println("PostgreSQL: Connected successfully.")
 
 	// create 'deductions' table เพื่อเตรียมสำหรับ admin ปรับค่า
-	err = pgdb.CreateAdminDeductionsTable(db)
+	err = pgdb.CreateAdminDeductionsTable(sharedvars.Db)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("PostgreSQL: Created admin deductions table successfully.")
 
 	// count คือจำนวน row ใน table ณ จุดเวลา
-	count, err := pgdb.CountRows(db, "deductions")
+	count, err := pgdb.CountRows(sharedvars.Db, "deductions")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// ถ้า count น้อยกว่า 1, ถึงยอมให้สร้าง row ใหม่
 	if count < 1 {
-		id, err := pgdb.CreateDeduction(db, initialPersonalExemption, kReceiptsUpperLimit)
+		id, err := pgdb.CreateDeduction(sharedvars.Db, sharedvars.InitialPersonalExemption, sharedvars.KReceiptsUpperLimit)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("PostgreSQL: Created admin deductions row with id: %d, initialPersonalExemption: %f\n kReceiptsUpperLimit: %f\n", id, initialPersonalExemption, kReceiptsUpperLimit)
+		fmt.Printf("PostgreSQL: Created admin deductions row with id: %d, initialPersonalExemption: %f\n kReceiptsUpperLimit: %f\n", id, sharedvars.InitialPersonalExemption, sharedvars.KReceiptsUpperLimit)
 	} //else ไปเช็คค่าใน db
 
 	// ใช้ row แรกสุด คือ id แรกสุด ในการ update และ read
-	lowestID, err := pgdb.GetLowestID(db, "deductions")
+	lowestID, err := pgdb.GetLowestID(sharedvars.Db, "deductions")
 	if err != nil {
 		panic(err.Error())
 	}
 
-	id = lowestID // id เป็น id สำหรับ ref ข้อมูล postgresql
+	sharedvars.Id = lowestID // id เป็น id สำหรับ ref ข้อมูล postgresql
 
 	//เช็ค authentication ของ admin
 	adminUsername := os.Getenv("ADMIN_USERNAME")
@@ -187,8 +155,8 @@ func main() {
 		return isAuthenticated, nil
 	})
 
-	e.POST("/tax/calculations", HandleTaxCalculation)
-	e.POST("/tax/calculations/upload-csv", handleFileUpload)
+	e.POST("/tax/calculations", handletax.HandleTaxCalculation)
+	e.POST("/tax/calculations/upload-csv", handlefileupload.HandleFileUpload)
 
 	adminGroup := e.Group("/admin")
 	adminGroup.Use(basicAuthMiddleware)
@@ -273,15 +241,15 @@ func setPersonalDeduction(c echo.Context) error {
 	}
 
 	// set change to initialPersonalExemption
-	initialPersonalExemption = d.Amount
+	sharedvars.InitialPersonalExemption = d.Amount
 
 	// update PersonalDeduction to postgres db
-	err = pgdb.UpdatePersonalDeduction(db, id, initialPersonalExemption)
+	err = pgdb.UpdatePersonalDeduction(sharedvars.Db, sharedvars.Id, sharedvars.InitialPersonalExemption)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// read หลังการ update ทำ log ในระบบ
-	adminPDeductions, err := pgdb.GetPersonalDeduction(db, id)
+	adminPDeductions, err := pgdb.GetPersonalDeduction(sharedvars.Db, sharedvars.Id)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -313,16 +281,16 @@ func setKReceiptDeduction(c echo.Context) error {
 	}
 
 	// Set change to kReceiptsUpperLimit
-	kReceiptsUpperLimit = d.Amount
+	sharedvars.KReceiptsUpperLimit = d.Amount
 
 	// postgresql part
 	// update KReceiptDeduction to postgres db
-	err = pgdb.UpdateKReceiptDeduction(db, id, kReceiptsUpperLimit)
+	err = pgdb.UpdateKReceiptDeduction(sharedvars.Db, sharedvars.Id, sharedvars.KReceiptsUpperLimit)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// read หลังการ update ทำ log ในระบบ
-	adminKDeductions, err := pgdb.GetKReceiptDeduction(db, id)
+	adminKDeductions, err := pgdb.GetKReceiptDeduction(sharedvars.Db, sharedvars.Id)
 	if err != nil {
 		log.Fatal(err)
 	}
